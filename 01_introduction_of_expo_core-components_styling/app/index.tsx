@@ -1,128 +1,125 @@
-import { useState } from "react";
-import {
-  Alert,
-  FlatList,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import ProfileCard from "@/components/ProfileCard";
+import { fetchRandomUser, RandomUser } from "@/lib/randomUser";
+import React, { useEffect, useState } from "react";
 
-export default function Index() {
-  const [text, setText] = useState("");
+import { FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-  const onPressFunction = () => {
-    Alert.alert("Button Pressed!");
-  };
+const BG = "#ffffff";
+const TEXT = "#11181c";
+const LINK = "#0a7ea4";
 
-  const DATA = [
-    {
-      id: "bd7acbea-c1b1-46c2-aed5-3ad53abb28ba",
-      title: "First Item",
-    },
-    {
-      id: "3ac68afc-c605-48d3-a4f8-fbd91aa97f63",
-      title: "Second Item",
-    },
-    {
-      id: "58694a0f-3da1-471f-bd96-145571e29d72",
-      title: "Third Item",
-    },
-    {
-      id: "58694a0f-3da1-471f-bd96-145571e29qsewqd72",
-      title: "Third Item",
-    },
-    {
-      id: "58694a0f-3da1-471f-bd96-145571e29d767",
-      title: "F Item",
-    },
-    {
-      id: "58694a0f-3da1-471f-bd96-145571e29d7787682",
-      title: "F Item",
-    },
-    {
-      id: "58694a0f-3da1-471f-bd96-145571e29d77876",
-      title: "S Item",
-    },
-  ];
+const Index = () => {
+  const [users, setUsers] = useState<RandomUser[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const Item = ({ title }) => (
-    <View style={styles.item}>
-      <Text style={styles.title}>{title}</Text>
+  async function load() {
+    try {
+      setLoading(true);
+      const data = await fetchRandomUser();
+      setUsers(data);
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const header = (
+    <View style={styles.header}>
+      <Text style={styles.title}>Profile Gallery</Text>
+      <Text style={styles.sub}>
+        Scroll through people loaded live from the free{" "}
+        <Text style={styles.bold}>randomuser.me</Text> API — pull down to
+        refresh.
+      </Text>
     </View>
   );
 
   return (
-    <View>
-      {/* {[...Array(200)].map((_, i) => (
-        <View
-          key={i}
-          style={{
-            backgroundColor: "#eee",
-            padding: 20,
-            marginBottom: 15,
-            borderRadius: 10,
-          }}
-        >
-          <Text style={{ fontSize: 18 }}>Card {i + 1}</Text>
-        </View>
-      ))} */}
-      {/* <Pressable onPress={onPressFunction}>
-        <Text>I'm pressable!</Text>
-      </Pressable> */}
-
-      {/* <TextInput
-        keyboardType="email-address"
-        placeholder="Enter Your Name"
-        value={text}
-        onChangeText={(value) => {
-          setText(value);
-        }}
-        onFocus={() => console.log("Input focused")}
-        onBlur={() => console.log("Input focused")}
-      />
-
-      <Text> You typed: {text}</Text>
-
-      <Button title="Click Me" onPress={() => Alert.alert("Button pressed!")} />
-      <Image
-        source={{
-          uri: "https://reactnative.dev/img/tiny_logo.png",
-        }}
-        style={styles.imageContainer}
-        resizeMode="contain"
-      /> */}
+    <SafeAreaView style={[styles.safe, { backgroundColor: BG }]}>
       <FlatList
-        data={DATA}
-        renderItem={({ item }) => <Item title={item.title} />}
-        keyExtractor={(item) => item.id}
-        showsHorizontalScrollIndicator={false}
-        ListHeaderComponent={<Text>Header</Text>}
-        ListFooterComponent={<Text>Footer</Text>}
-        ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
+        data={users}
+        keyExtractor={(item) => item.login.uuid}
+        renderItem={({ item }) => <ProfileCard user={item} />}
+        ListHeaderComponent={header}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => load()}
+            tintColor={LINK}
+          />
+        }
       />
-    </View>
+    </SafeAreaView>
   );
-}
+};
+
+export default Index;
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
-    marginTop: StatusBar.currentHeight || 0,
   },
-  item: {
-    backgroundColor: "#f9c2ff",
-    padding: 20,
-    marginVertical: 8,
-    marginHorizontal: 16,
+  listContent: {
+    paddingBottom: 32,
+    paddingTop: 8,
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+    gap: 8,
   },
   title: {
     fontSize: 32,
+    fontWeight: "bold",
+    color: TEXT,
+    letterSpacing: -0.5,
+  },
+  sub: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: TEXT,
+    opacity: 0.9,
+  },
+  bold: {
+    fontWeight: "600",
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+    gap: 12,
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 16,
+    color: TEXT,
+  },
+  errTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: TEXT,
+    marginBottom: 4,
+  },
+  errMsg: {
+    textAlign: "center",
+    marginBottom: 8,
+    color: TEXT,
+  },
+  retry: {
+    marginTop: 8,
+    fontSize: 16,
+    color: LINK,
+    fontWeight: "600",
   },
 });
-
-// Data
-// renderItem
-// keyExtractor
-// horizontal
-//
