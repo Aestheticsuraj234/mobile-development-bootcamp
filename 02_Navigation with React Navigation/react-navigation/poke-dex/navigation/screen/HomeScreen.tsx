@@ -1,14 +1,21 @@
 import { useNavigation } from "@react-navigation/native";
-import { StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   getPokemonByType,
   getPokemonList,
+  PokemonDetail,
   PokemonRef,
 } from "../../api/pokemon";
+import { COLORS } from "../../constant/colors";
+import { StatusBar } from "expo-status-bar";
+import AppHeader from "../../components/app-header";
+import SearchInput from "../../components/search-input";
+import FilterChips from "../../components/filter-chips";
+import PokemonCard from "../../components/pokemon-card";
 
 const HomeScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   const [masterList, setMasterList] = useState<PokemonRef[]>([]);
   const [searchText, setSearchText] = useState("");
@@ -56,8 +63,52 @@ const HomeScreen = () => {
     }
   };
 
+  const handleCardPress = (pokemon:PokemonDetail)=>{
+    navigation.navigate("PokemonDetail" , {pokemon})
+  }
+
   return (
-    <View>
+    <View style={styles.container}>
+       <StatusBar style="light" />
+       <AppHeader title="PokeDex" showLogo/>
+          <View style={styles.content}>
+        <View style={styles.searchContainer}>
+          <SearchInput
+            value={searchText}
+            onChangeText={setSearchText}
+            placeholder="Search Pokemon..."
+            onClear={() => setSearchText("")}
+          />
+        </View>
+
+        <View style={styles.filterContainer}>
+          <FilterChips
+            selectedType={selectedType}
+            onSelectType={setSelectedType}
+          />
+        </View>
+
+        {loading && page === 1 ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={COLORS.accentEmerald} />
+          </View>
+        ) : (
+          <FlatList
+            data={displayList}
+            keyExtractor={(item) => item.name}
+            renderItem={({ item }) => (
+              <PokemonCard
+                name={item.name}
+                url={item.url}
+                onPress={handleCardPress}
+              />
+            )}
+            contentContainerStyle={styles.listContent}
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.5}
+          />
+        )}
+      </View>
       <Text>HomeScreen</Text>
     </View>
   );
